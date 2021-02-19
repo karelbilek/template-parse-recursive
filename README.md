@@ -1,8 +1,6 @@
 # template-parse-recursive
 Package for parsing go templates recursively
 
-Note: this might be actually implemented already in go 1.16 https://golang.org/pkg/html/template/#ParseFS . I am not sure :)
-
 Use like this
 
 ```go
