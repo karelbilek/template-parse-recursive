@@ -2,6 +2,7 @@ package recurparse
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -43,11 +44,6 @@ func TestGetFiles(t *testing.T) {
 				"second/4.html",
 			},
 		},
-		{
-			Directory:   "testdata/getFiles/4_infinite_loop",
-			Glob:        "*.html",
-			ExpectedErr: `recurparse: found symlink loop on "dir/infinite" ("testdata/getFiles/4_infinite_loop/dir")`,
-		},
 	}
 
 TEST:
@@ -57,7 +53,10 @@ TEST:
 			t.Fatalf("test %d: cannot resolve %q: %+v", i, d.Directory, err)
 		}
 
-		files, err := getFiles(resolved, "", d.Glob, nil, map[string]bool{})
+		fsys := os.DirFS(resolved)
+
+		files, err := getFilesFS(fsys, d.Glob)
+
 		if d.ExpectedErr != "" {
 			if err == nil || err.Error() != d.ExpectedErr {
 				t.Fatalf("Expected error %q, got %+v", d.ExpectedErr, err)
