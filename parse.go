@@ -17,6 +17,7 @@ type nameGiver interface {
 
 type templateCreator[T nameGiver] interface {
 	New(name string) T
+	NewBasedOn(nameGiver T, name string) T
 	Parse(nameGiver T, text string) (T, error)
 	Nil() T
 }
@@ -25,6 +26,10 @@ type htmlTemplateCreator struct{}
 
 func (htmlTemplateCreator) New(name string) *templateHtml.Template {
 	return templateHtml.New(name)
+}
+
+func (htmlTemplateCreator) NewBasedOn(t *templateHtml.Template, name string) *templateHtml.Template {
+	return t.New(name)
 }
 
 func (htmlTemplateCreator) Parse(t *templateHtml.Template, text string) (*templateHtml.Template, error) {
@@ -39,6 +44,10 @@ type textTemplateCreator struct{}
 
 func (textTemplateCreator) New(name string) *templateText.Template {
 	return templateText.New(name)
+}
+
+func (textTemplateCreator) NewBasedOn(t *templateText.Template, name string) *templateText.Template {
+	return t.New(name)
 }
 
 func (textTemplateCreator) Parse(t *templateText.Template, text string) (*templateText.Template, error) {
@@ -81,7 +90,7 @@ func parseFS[T nameGiver](t T, creator templateCreator[T], fsys fs.FS, glob stri
 		if filename == t.Name() {
 			tmpl = t
 		} else {
-			tmpl = creator.New(filename)
+			tmpl = creator.NewBasedOn(t, filename)
 		}
 
 		_, err = creator.Parse(tmpl, s)
