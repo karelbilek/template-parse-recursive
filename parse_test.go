@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -34,8 +35,10 @@ func TestGetFiles(t *testing.T) {
 				"second/7.html",
 			},
 		},
-		{
-			Directory: "testdata/getFiles/3_symlink",
+	}
+	if runtime.GOOS != "windows" {
+		getFilesTestdata = append(getFilesTestdata, getFilesTestdatum{
+			Directory: "testdata/getFiles/3_unix_symlink",
 			Glob:      "*.html",
 			Expected: []string{
 				"1.html",
@@ -43,7 +46,18 @@ func TestGetFiles(t *testing.T) {
 				"first/4.html",
 				"second/4.html",
 			},
-		},
+		})
+	} else {
+		getFilesTestdata = append(getFilesTestdata, getFilesTestdatum{
+			Directory: "testdata/getFiles/4_windows_symlink",
+			Glob:      "*.html",
+			Expected: []string{
+				"1.html",
+				"3.html",
+				"first/4.html",
+				"second/4.html",
+			},
+		})
 	}
 
 TEST:
@@ -65,19 +79,19 @@ TEST:
 		}
 
 		if err != nil {
-			t.Fatalf("test %d: err %+v", i, err)
+			t.Fatalf("test %d (%s): err %+v", i, d.Directory, err)
 		}
 
 		if len(files) != len(d.Expected) {
 			for _, f := range files {
 				fmt.Println(f)
 			}
-			t.Fatalf("test %d: different lengths: %d vs %d", i, len(files), len(d.Expected))
+			t.Fatalf("test %d (%s): different lengths: %d vs %d", i, d.Directory, len(files), len(d.Expected))
 		}
 
 		for j := range files {
 			if files[j] != d.Expected[j] {
-				t.Fatalf("test %d: %d : %q != %q", i, j, files[j], d.Expected[j])
+				t.Fatalf("test %d (%s): %d : %q != %q", i, d.Directory, j, files[j], d.Expected[j])
 			}
 		}
 	}
