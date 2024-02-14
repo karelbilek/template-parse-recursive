@@ -5,8 +5,6 @@ import (
 	"html/template"
 	"strings"
 	"testing"
-
-	_ "embed"
 )
 
 //go:embed testdata/func/*.txt
