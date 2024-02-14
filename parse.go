@@ -166,7 +166,10 @@ func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
 							}
 							isDir := fsStat.IsDir()
 							if isDir {
-								walk(path)
+								err := walk(path)
+								if err != nil {
+									return err
+								}
 							}
 						}
 					}
