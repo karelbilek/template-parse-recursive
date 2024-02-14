@@ -158,7 +158,7 @@ func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
 						return err
 					}
 					if sym {
-						fsStat, err := fs.Stat(myfs, path)
+						fsStat, err  := fs.Stat(myfs, path)
 						if err == nil {
 							// ignore error here; cen be non-existent symlink target
 							if err != nil {
