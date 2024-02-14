@@ -13,9 +13,8 @@ jobs:
         os:
           - ubuntu-latest
         go:
-          - 1.20.x
-          - 1.21.x
-          - 1.22.x
+          - stable
+          - old-stable
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
