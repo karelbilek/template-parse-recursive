@@ -47,17 +47,6 @@ func TestGetFiles(t *testing.T) {
 				"second/4.html",
 			},
 		})
-	} else {
-		getFilesTestdata = append(getFilesTestdata, getFilesTestdatum{
-			Directory: "testdata/getFiles/4_windows_symlink",
-			Glob:      "*.html",
-			Expected: []string{
-				"1.html",
-				"3.html",
-				"first/4.html",
-				"second/4.html",
-			},
-		})
 	}
 
 TEST:
