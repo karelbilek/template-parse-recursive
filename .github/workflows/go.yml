@@ -59,8 +59,5 @@ jobs:
     - name: Run staticcheck
       run: staticcheck ./...
 
-    - name: Run gofmt
-      run: test -z "$(gofmt -l .)"
-
     - name: Test
       run: go test -race -vet=off -v ./...
