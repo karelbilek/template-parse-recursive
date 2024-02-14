@@ -145,7 +145,6 @@ func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
 	var walk func(dir string) error
 	walk = func(dir string) error {
 		err := fs.WalkDir(myfs, dir, func(path string, d fs.DirEntry, err error) error {
-			fmt.Println("walking on sunshine", path)
 			if !d.IsDir() {
 				isMatched, err := filepath.Match(glob, d.Name())
 				if err != nil {
