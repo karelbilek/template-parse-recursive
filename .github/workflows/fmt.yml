@@ -1,0 +1,27 @@
+name: gofmt
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  gofmt:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        go:
+          - stable
+          - oldstable
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go }}
+    - name: Run gofmt
+      run: test -z "$(gofmt -l .)"

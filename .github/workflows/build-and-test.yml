@@ -1,4 +1,4 @@
-name: buld-and-test
+name: build-and-test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-test-ubuntu:
+  build-and-test:
     strategy:
       matrix:
         os:
@@ -15,15 +15,14 @@ jobs:
           - ubuntu-latest
           - windows-latest
         go:
-          - 1.20.x
-          - 1.21.x
-          - 1.22.x
+          - stable
+          - oldstable
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
 
