@@ -1,37 +1,50 @@
 package recurparse
 
 import (
-	"embed"
 	"html/template"
+	"os"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
-//go:embed testdata/simple/*.txt
-var simple embed.FS
+func ExampleHTMLParseFS() {
+	fsTest := fstest.MapFS{
+		"data.txt": &fstest.MapFile{
+			Data: []byte("super simple {{.Foo}}"),
+		},
+		"some/deep/file.txt": &fstest.MapFile{
+			Data: []byte("other simple {{.Foo}}"),
+		},
+	}
 
-func TestSimpleNil(t *testing.T) {
 	tmpl, err := HTMLParseFS(
 		nil,
-		simple,
+		fsTest,
 		"*.txt",
 	)
 	if err != nil {
 		panic(err)
 	}
 
-	b := &strings.Builder{}
-	err = tmpl.ExecuteTemplate(b, "testdata/simple/simple.txt", struct{ Foo string }{Foo: "bar"})
+	err = tmpl.ExecuteTemplate(os.Stdout, "some/deep/file.txt", struct{ Foo string }{Foo: "bar"})
 	if err != nil {
 		panic(err)
 	}
-	if b.String() != "super simple bar" {
-		t.Error("not equal super simple bar")
-	}
 
+	// Output: other simple bar
 }
 
 func TestSimpleExisting(t *testing.T) {
+	fsTest := fstest.MapFS{
+		"data.txt": &fstest.MapFile{
+			Data: []byte("super simple {{.Foo}}"),
+		},
+		"some/deep/file.txt": &fstest.MapFile{
+			Data: []byte("other simple {{.Foo}}"),
+		},
+	}
+
 	existing, err := template.New("existing").Parse("existing {{.Foo}}")
 	if err != nil {
 		panic(err)
@@ -39,7 +52,7 @@ func TestSimpleExisting(t *testing.T) {
 
 	tmpl, err := HTMLParseFS(
 		existing,
-		simple,
+		fsTest,
 		"*.txt",
 	)
 	if err != nil {
@@ -47,12 +60,12 @@ func TestSimpleExisting(t *testing.T) {
 	}
 
 	b := &strings.Builder{}
-	err = tmpl.ExecuteTemplate(b, "testdata/simple/simple.txt", struct{ Foo string }{Foo: "bar"})
+	err = tmpl.ExecuteTemplate(b, "some/deep/file.txt", struct{ Foo string }{Foo: "bar"})
 	if err != nil {
 		panic(err)
 	}
-	if b.String() != "super simple bar" {
-		t.Error("not equal super simple bar")
+	if b.String() != "other simple bar" {
+		t.Error("not equal other simple bar")
 	}
 
 	b = &strings.Builder{}

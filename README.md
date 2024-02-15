@@ -1,4 +1,7 @@
 # template-parse-recursive
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/karelbilek/template-parse-recursive.svg)](https://pkg.go.dev/github.com/karelbilek/template-parse-recursive)
+
 Tool for parsing go templates recursively.
 
 By default, go's template.ParseGlob does not traverse folders recursively, and uses only filename without folder name as a template name.
