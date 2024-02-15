@@ -8,15 +8,15 @@ import (
 	"testing"
 )
 
-func TestGetFiles(t *testing.T) {
-	type getFilesTestdatum struct {
+func TestMatchingNames(t *testing.T) {
+	type matchingNamesDatum struct {
 		Directory   string
 		Glob        string
 		Expected    []string
 		ExpectedErr string
 	}
 
-	getFilesTestdata := []getFilesTestdatum{
+	matchingNamesData := []matchingNamesDatum{
 		{
 			Directory: "testdata/getFiles/1_simple_flat",
 			Glob:      "*.html",
@@ -37,7 +37,7 @@ func TestGetFiles(t *testing.T) {
 		},
 	}
 	if runtime.GOOS != "windows" {
-		getFilesTestdata = append(getFilesTestdata, getFilesTestdatum{
+		matchingNamesData = append(matchingNamesData, matchingNamesDatum{
 			Directory: "testdata/getFiles/3_unix_symlink",
 			Glob:      "*.html",
 			Expected: []string{
@@ -50,7 +50,7 @@ func TestGetFiles(t *testing.T) {
 	}
 
 TEST:
-	for i, d := range getFilesTestdata {
+	for i, d := range matchingNamesData {
 		resolved, err := filepath.EvalSymlinks(d.Directory)
 		if err != nil {
 			t.Fatalf("test %d: cannot resolve %q: %+v", i, d.Directory, err)
@@ -58,7 +58,7 @@ TEST:
 
 		fsys := os.DirFS(resolved)
 
-		files, err := getFilesFS(fsys, d.Glob)
+		files, err := matchingNames(fsys, d.Glob)
 
 		if d.ExpectedErr != "" {
 			if err == nil || err.Error() != d.ExpectedErr {
