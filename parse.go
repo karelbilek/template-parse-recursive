@@ -1,3 +1,25 @@
+// Package recurparse parsing go templates recursively, instead of default template behavior
+// that puts all files together.
+//
+// It goes through subfolders recursively and parses the files matching the glob.
+// The templates have the subfolder path in the name, separated by forward slash (even on windows).
+//
+// The template names are as relative to the given folder.
+//
+// All the 4 functions behave in similar way.
+//
+// If the first argument is nil,
+// the resulting template will have one of the files as name and content;
+// if it's an existing template, it will add the files as associated templates.
+//
+// The pattern works only on the final filename; that is, k*.html will match foo/bar/kxxx.html;
+// it does NOT filter the directory name, all directories are walked through.
+//
+// The matching logic is using filepath.Match on the filename, in the same way template.Parse do it.
+// It follows all symlinks, the symlinks will be there under the symlink name.
+// If there is a "symlink loop" (that is, symlink to .. or similar), the function will panic and run out of memory.
+//
+// If there is no files that matches, the function errors, same as go's ParseFiles.
 package recurparse
 
 import (
@@ -10,12 +32,15 @@ import (
 	"path/filepath"
 )
 
-type nameGiver interface {
+// named templ, as `template` is import name in tests
+// this is all we actually need for template type
+type templ interface {
 	comparable
 	Name() string
 }
 
-type templateCreator[T nameGiver] interface {
+// this is abstraction of top-level template functions, so I can reuse same functions
+type templateCreator[T templ] interface {
 	New(name string) T
 	NewBasedOn(nameGiver T, name string) T
 	Parse(nameGiver T, text string) (T, error)
@@ -58,18 +83,21 @@ func (textTemplateCreator) Nil() *templateText.Template {
 	return nil
 }
 
-func parseFS[T nameGiver](t T, creator templateCreator[T], fsys fs.FS, glob string) (T, error) {
+func parseFS[T templ](t T, creator templateCreator[T], fsys fs.FS, glob string) (T, error) {
+	// first we get the names
 	n := creator.Nil()
-	files, err := getFilesFS(fsys, glob)
+	files, err := matchingNames(fsys, glob)
 	if err != nil {
 		return n, err
 	}
-	// logic copied from src/html/template/helper.go
 
 	if len(files) == 0 {
-		// Not really a problem, but be consistent.
+		// Not really a problem, but be consistent with ParseFiles
 		return n, fmt.Errorf("recurparse: no files matched")
 	}
+
+	// now parse the templates.
+	// the actual code just logic copied from src/html/template/helper.go, just changed for our purposes
 
 	for _, filename := range files {
 		b, err := fs.ReadFile(fsys, filename)
@@ -102,10 +130,16 @@ func parseFS[T nameGiver](t T, creator templateCreator[T], fsys fs.FS, glob stri
 	return t, nil
 }
 
+// TextParseFS opens a fs.FS filesystem and recursively parses the files there as text templates.
+//
+// See package docs for details of the behavior.
 func TextParseFS(t *templateText.Template, fsys fs.FS, glob string) (*templateText.Template, error) {
 	return parseFS[*templateText.Template](t, textTemplateCreator{}, fsys, glob)
 }
 
+// TextParse opens a directory and recursively parses the files there as text templates.
+//
+// See package docs for details of the behavior.
 func TextParse(t *templateText.Template, dirPath, glob string) (*templateText.Template, error) {
 	resolved, err := filepath.EvalSymlinks(dirPath)
 	if err != nil {
@@ -116,10 +150,16 @@ func TextParse(t *templateText.Template, dirPath, glob string) (*templateText.Te
 	return TextParseFS(t, fsys, glob)
 }
 
+// HTMLParseFS opens a fs.FS filesystem and recursively parses the files there as HTML templates.
+//
+// See package docs for details of the behavior.
 func HTMLParseFS(t *templateHtml.Template, fsys fs.FS, glob string) (*templateHtml.Template, error) {
 	return parseFS[*templateHtml.Template](t, htmlTemplateCreator{}, fsys, glob)
 }
 
+// HTMLParse opens a fs.FS filesystem and recursively parses the files there as HTML templates.
+//
+// See package docs for details of the behavior.
 func HTMLParse(t *templateHtml.Template, dirPath, glob string) (*templateHtml.Template, error) {
 	resolved, err := filepath.EvalSymlinks(dirPath)
 	if err != nil {
@@ -130,7 +170,8 @@ func HTMLParse(t *templateHtml.Template, dirPath, glob string) (*templateHtml.Te
 	return HTMLParseFS(t, fsys, glob)
 }
 
-func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
+// matchingNames is where we walk through the FS and actually get the names
+func matchingNames(myfs fs.FS, glob string) ([]string, error) {
 	isSymlink := func(d fs.DirEntry) (bool, error) {
 		info, err := d.Info()
 		if err != nil {
@@ -145,6 +186,11 @@ func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
 	var walk func(dir string) error
 	walk = func(dir string) error {
 		err := fs.WalkDir(myfs, dir, func(path string, d fs.DirEntry, err error) error {
+			// we return errors everywhere we can... not sure if it's the best idea,
+			// but I guess better error than not? be safe
+			if err != nil {
+				return err
+			}
 			if !d.IsDir() {
 				isMatched, err := filepath.Match(glob, d.Name())
 				if err != nil {
@@ -160,7 +206,6 @@ func getFilesFS(myfs fs.FS, glob string) ([]string, error) {
 					if sym {
 						fsStat, err := fs.Stat(myfs, path)
 						if err == nil {
-							// ignore error here; cen be non-existent symlink target
 							if err != nil {
 								return err
 							}
